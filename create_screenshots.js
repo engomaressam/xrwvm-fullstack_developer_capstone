@@ -1,84 +1,143 @@
+/*jshint esversion: 8 */
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const path = require('path');
 
 (async () => {
   const browser = await puppeteer.launch({
     headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    defaultViewport: { width: 1920, height: 1080 }
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1920, height: 1080 });
-
-  const screenshotsDir = './screenshots';
+  
+  const screenshotsDir = path.join(__dirname, 'screenshots');
   if (!fs.existsSync(screenshotsDir)) {
     fs.mkdirSync(screenshotsDir);
   }
 
-  console.log('Taking screenshots for all tasks...');
+  console.log('📸 Starting screenshot capture for all 27 required tasks...\n');
 
-  try {
-    // Task 3: About Us page
-    console.log('Task 3: About Us page');
-    await page.goto('http://localhost:8000/about/', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/about_us.png`, fullPage: false });
+  const screenshots = [];
 
-    // Task 4: Contact Us page
-    console.log('Task 4: Contact Us page');
-    await page.goto('http://localhost:8000/contact/', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/contact_us.png`, fullPage: false });
-
-    // Task 5: Login page
-    console.log('Task 5: Login page');
-    await page.goto('http://localhost:8000/login/', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/login.png`, fullPage: false });
-
-    // Task 7: Sign-up page
-    console.log('Task 7: Sign-up page');
-    await page.goto('http://localhost:8000/register/', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/sign-up.png`, fullPage: false });
-
-    // Task 8: Dealer reviews via Express API
-    console.log('Task 8: Dealer reviews (Express API)');
-    await page.goto('http://localhost:3030/fetchReviews/dealer/29', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/dealer_review.png`, fullPage: false });
-
-    // Task 9: All dealers via Express API
-    console.log('Task 9: All dealerships (Express API)');
-    await page.goto('http://localhost:3030/fetchDealers', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/dealerships.png`, fullPage: false });
-
-    // Task 10: Dealer details via Express API
-    console.log('Task 10: Dealer details (Express API)');
-    await page.goto('http://localhost:3030/fetchDealer/3', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/dealer_details.png`, fullPage: false });
-
-    // Task 11: Kansas dealers via Express API
-    console.log('Task 11: Kansas dealers (Express API)');
-    await page.goto('http://localhost:3030/fetchDealers/Kansas', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/kansasDealers.png`, fullPage: false });
-
-    // Task 12: Admin login
-    console.log('Task 12: Admin login');
-    await page.goto('http://localhost:8000/admin/', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/admin_login.png`, fullPage: false });
-
-    // Task 14: Car makes
-    console.log('Task 14: Car makes');
-    await page.goto('http://localhost:8000/djangoapp/get_cars', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/cars.png`, fullPage: false });
-
-    // Task 17: Dealers page (not logged in)
-    console.log('Task 17: Dealers page (not logged in)');
-    await page.goto('http://localhost:8000/dealers/', { waitUntil: 'networkidle2', timeout: 10000 });
-    await page.screenshot({ path: `${screenshotsDir}/get_dealers.png`, fullPage: false });
-
-    console.log('Basic screenshots completed! Manual screenshots needed for logged-in states.');
-
-  } catch (error) {
-    console.error('Error taking screenshots:', error);
+  async function captureScreenshot(name, url, description, waitTime = 2000) {
+    try {
+      console.log(`📷 Capturing: ${name}`);
+      await page.goto(url, { waitUntil: 'networkidle0', timeout: 15000 });
+      await page.waitForTimeout(waitTime);
+      const screenshotPath = path.join(screenshotsDir, `${name}.png`);
+      await page.screenshot({ path: screenshotPath, fullPage: false });
+      screenshots.push({ name, description, status: '✅' });
+      console.log(`   ✅ Saved: ${name}.png\n`);
+    } catch (error) {
+      screenshots.push({ name, description, status: '❌' });
+      console.error(`   ❌ Error capturing ${name}: ${error.message}\n`);
+    }
   }
 
+  // Task 3: About Us
+  await captureScreenshot(
+    'about_us',
+    'http://localhost:8000/about/',
+    'About Us page showing team member profiles and company information'
+  );
+
+  // Task 4: Contact Us
+  await captureScreenshot(
+    'contact_us',
+    'http://localhost:8000/contact/',
+    'Contact Us page displaying dealership address and contact details'
+  );
+
+  // Task 5: Login (homepage after login - needs manual login)
+  await captureScreenshot(
+    'login',
+    'http://localhost:8000/login/',
+    'Login page with username/password fields for authentication'
+  );
+
+  // Task 7: Sign-up
+  await captureScreenshot(
+    'sign-up',
+    'http://localhost:8000/register/',
+    'Registration page with form fields for creating new user account'
+  );
+
+  // Task 8: Dealer reviews via Express API
+  await captureScreenshot(
+    'dealer_review',
+    'http://localhost:3030/fetchReviews/dealer/29',
+    'JSON response showing all reviews for dealer ID 29 from MongoDB'
+  );
+
+  // Task 9: All dealerships via Express API
+  await captureScreenshot(
+    'dealerships',
+    'http://localhost:3030/fetchDealers',
+    'JSON response listing all dealerships across all states from Express API'
+  );
+
+  // Task 10: Dealer details via Express API
+  await captureScreenshot(
+    'dealer_details',
+    'http://localhost:3030/fetchDealer/3',
+    'JSON response with detailed information for specific dealer ID 3'
+  );
+
+  // Task 11: Kansas dealers via Express API
+  await captureScreenshot(
+    'kansasDealers',
+    'http://localhost:3030/fetchDealers/Kansas',
+    'JSON response showing dealerships filtered by Kansas state'
+  );
+
+  // Task 12: Admin login
+  await captureScreenshot(
+    'admin_login',
+    'http://localhost:8000/admin/',
+    'Django admin login page for superuser access'
+  );
+
+  // Task 14: Car makes
+  await captureScreenshot(
+    'cars',
+    'http://localhost:8000/djangoapp/get_cars',
+    'JSON response displaying all car makes and models from Django API'
+  );
+
+  // Task 17: Dealers page (not logged in)
+  await captureScreenshot(
+    'get_dealers',
+    'http://localhost:8000/dealers/',
+    'Dealerships page showing table of all dealers without login'
+  );
+
+  // Summary
+  console.log('\n' + '='.repeat(60));
+  console.log('📊 SCREENSHOT CAPTURE SUMMARY');
+  console.log('='.repeat(60) + '\n');
+  
+  screenshots.forEach((s, i) => {
+    console.log(`${i + 1}. ${s.status} ${s.name}.png`);
+    console.log(`   ${s.description}\n`);
+  });
+
+  const successCount = screenshots.filter(s => s.status === '✅').length;
+  console.log(`\n✅ Successfully captured: ${successCount}/${screenshots.length} screenshots`);
+  console.log('\n⚠️  MANUAL SCREENSHOTS STILL NEEDED:');
+  console.log('   • logout.png - Logout alert after clicking logout');
+  console.log('   • admin_logout.png - Admin logout confirmation');
+  console.log('   • car_models.png - Car models in admin panel');
+  console.log('   • sentiment_analyzer.png - Sentiment analyzer endpoint');
+  console.log('   • get_dealers_loggedin.png - Dealers page after login');
+  console.log('   • dealersbystate.png - Dealers filtered by state');
+  console.log('   • dealer_id_reviews.png - Dealer details with reviews');
+  console.log('   • dealership_review_submission.png - Review form filled');
+  console.log('   • added_review.png - New review with sentiment');
+  console.log('   • CICD.png - GitHub Actions workflow success');
+  console.log('   • deployed_*.png - 4 deployment screenshots\n');
+
   await browser.close();
-  console.log('Screenshot generation complete!');
+  console.log('✨ Screenshot capture complete!\n');
 })();
