@@ -25,7 +25,7 @@ const path = require('path');
     try {
       console.log(`📷 Capturing: ${name}`);
       await page.goto(url, { waitUntil: 'networkidle0', timeout: 15000 });
-      await page.waitForTimeout(waitTime);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
       const screenshotPath = path.join(screenshotsDir, `${name}.png`);
       await page.screenshot({ path: screenshotPath, fullPage: false });
       screenshots.push({ name, description, status: '✅' });
